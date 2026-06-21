@@ -16,14 +16,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.otuskmp.StopwatchViewModel
+import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: StopwatchViewModel by inject()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    StopWatchContent()
+                    StopWatchContent(viewModel = viewModel)
                 }
             }
         }
@@ -40,9 +40,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun StopWatchContent(modifier: Modifier = Modifier) {
+fun StopWatchContent(modifier: Modifier = Modifier, viewModel: StopwatchViewModel) {
     // fixme: Use jetpack ViewModel for handling configuration changes
-    val viewModel = remember { StopwatchViewModel() }
     val uiState by viewModel.uiState.collectAsState()
 
     DisposableEffect(Unit) {
@@ -72,13 +71,12 @@ fun StopWatchContent(modifier: Modifier = Modifier) {
                 Text("Stop")
             }
         }
-    }
-}
+        TextButton(
+            modifier = Modifier.padding(top = 16.dp),
+            onClick = { viewModel.onCopyToClipBoard(uiState.formattedTime) }) {
+            Text("Copy to clipboard")
+        }
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    MyApplicationTheme {
-        StopWatchContent()
+        Text(text = "Text from buffer:${uiState.clipboardText}")
     }
 }

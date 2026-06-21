@@ -12,8 +12,11 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class StopwatchViewModel {
+private const val BUFFER_IS_EMPTY = "buffer is empty"
+
+class StopwatchViewModel(private val clipboardManager: KMPClipboardManager) {
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var job: Job? = null
 
@@ -24,6 +27,15 @@ class StopwatchViewModel {
         )
     )
     val uiState: AnyStateFlow<StopwatchUiState> = _uiState.wrapToAny()
+
+    fun onCopyToClipBoard(text: String) {
+        coroutineScope.launch {
+            clipboardManager.copyToClipBoard(text)
+            _uiState.update {
+                it.copy(clipboardText = clipboardManager.getFromClipBoard() ?: BUFFER_IS_EMPTY)
+            }
+        }
+    }
 
     fun onStartClicked() {
         startTimer()
@@ -68,7 +80,8 @@ class StopwatchViewModel {
 
 data class StopwatchUiState(
     val currentTimeMillis: Long,
-    val initialTimeMillis: Long
+    val initialTimeMillis: Long,
+    val clipboardText: String = BUFFER_IS_EMPTY
 ) {
     private val formatter = DecimalFormat("0.00")
     val formattedTime: String =
